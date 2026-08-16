@@ -12,12 +12,17 @@ public static class DesignEndpoints
     {
         var api = app.MapGroup("/api/v1").WithTags("Design");
 
-        api.MapPost("/dev/bootstrap", async (DesignService service, IHostEnvironment env, CancellationToken ct) =>
+        api.MapPost("/dev/bootstrap", async (
+            DesignService service,
+            AuthService auth,
+            IHostEnvironment env,
+            CancellationToken ct) =>
         {
             if (!env.IsDevelopment())
                 return Results.NotFound();
 
             var (tenantId, organizationId) = await service.BootstrapDevTenantAsync(ct);
+            await auth.EnsureDevDemoCredentialsAsync(ct);
             return Results.Ok(new DevBootstrapResponse(tenantId, organizationId));
         });
 

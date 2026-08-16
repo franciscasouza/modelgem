@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { Button } from "@/components/ui/Primitives";
 import styles from "./shell.module.css";
 
 const NAV = [
@@ -13,7 +16,14 @@ const NAV = [
 ] as const;
 
 function NavIcon({ name }: { name: string }) {
-  const common = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8 };
+  const common = {
+    width: 18,
+    height: 18,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+  };
   switch (name) {
     case "lib":
       return (
@@ -58,6 +68,21 @@ function NavIcon({ name }: { name: string }) {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function onLogout() {
+    setLoggingOut(true);
+    try {
+      await logout();
+      router.replace("/login");
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+
+  const displayName = user?.displayName?.trim() || user?.email || "Usuária";
 
   return (
     <aside className={styles.sidebar}>
@@ -103,7 +128,25 @@ export function Sidebar() {
         })}
       </nav>
 
-      <p className={styles.sidebarFoot}>Unidade: cm · IA não é autoridade final</p>
+      <div className={styles.accountBlock}>
+        {user ? (
+          <>
+            <p className={styles.accountOrg}>{user.organizationName}</p>
+            <p className={styles.accountUser}>{displayName}</p>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className={styles.logoutBtn}
+              disabled={loggingOut}
+              onClick={() => void onLogout()}
+            >
+              {loggingOut ? "Saindo…" : "Sair"}
+            </Button>
+          </>
+        ) : null}
+        <p className={styles.sidebarFoot}>Unidade: cm · IA não é autoridade final</p>
+      </div>
     </aside>
   );
 }

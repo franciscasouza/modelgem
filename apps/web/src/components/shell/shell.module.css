@@ -98,6 +98,42 @@
   opacity: 0.8;
 }
 
+.accountBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.accountOrg {
+  font-size: var(--mf-text-sm);
+  font-weight: 650;
+  color: #fff;
+  line-height: 1.3;
+  padding: 0 0.35rem;
+}
+
+.accountUser {
+  font-size: 0.75rem;
+  color: var(--mf-sidebar-muted);
+  padding: 0 0.35rem;
+  margin-bottom: 0.35rem;
+  word-break: break-word;
+}
+
+.logoutBtn {
+  align-self: flex-start;
+  margin: 0 0.35rem 0.5rem;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.logoutBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
 .sidebarFoot {
   font-size: 0.7rem;
   color: var(--mf-sidebar-muted);

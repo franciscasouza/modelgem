@@ -16,7 +16,7 @@ O ModelaFlow precisa de uma base multi-tenant testável antes de IA, editor ou e
    - `packages/pattern-core` — biblioteca C# (.NET 8) com medidas em cm, modelo geométrico e bases paramétricas (saia/vestido)
 2. **Persistência**: PostgreSQL + Entity Framework Core; connection string via `appsettings` / variáveis de ambiente.
 3. **Multi-tenant**: toda entidade de domínio carrega `tenant_id`; consultas e escritas de domínio filtram por ele. Nesta fase, `Organization.Id` == `TenantId`.
-4. **Evolução posterior**: Redis, storage S3-compatível, provedor de fila (export PDF in-process no MVP — ADR-0003), AuthN completa, OCR/IA, editor 2D UI, billing.
+4. **Evolução posterior**: Redis, storage S3-compatível, provedor de fila (export PDF in-process no MVP — ADR-0003), OAuth/RBAC fino (AuthN mínimo — ADR-0004), OCR/IA, editor 2D UI, billing.
 
 ## Consequências
 

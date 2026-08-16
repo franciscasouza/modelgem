@@ -1,4 +1,5 @@
 import type {
+  AuthUser,
   BootstrapResponse,
   CreateBlankPatternInput,
   CreateCustomerInput,
@@ -6,11 +7,13 @@ import type {
   Customer,
   ExportJob,
   GeneratePatternInput,
+  LoginInput,
   MeasurementSet,
   OverviewCounts,
   PatternDetail,
   PatternDocument,
   PatternSummary,
+  RegisterInput,
   TechnicalSheet,
 } from "./types";
 
@@ -21,7 +24,11 @@ const API_BASE =
 /** Dev seed tenant from API (DesignService / ADR kickoff). */
 export const DEV_TENANT_ID = "11111111-1111-1111-1111-111111111111";
 
+/** @deprecated Prefer tenant from `/me`. Kept only for Dev fallback / cleanup. */
 const TENANT_STORAGE_KEY = "mf_tenant_id";
+
+/** Tenant da sessão autenticada (preenchido por AuthProvider / me). */
+let sessionTenantId: string | null = null;
 
 export class ApiError extends Error {
   status: number;
@@ -39,11 +46,25 @@ function isBrowser(): boolean {
   return typeof window !== "undefined";
 }
 
+export function getSessionTenantId(): string | null {
+  return sessionTenantId;
+}
+
+export function setSessionTenantId(tenantId: string | null): void {
+  sessionTenantId = tenantId;
+  if (tenantId && isBrowser()) {
+    // Remove legado: fluxo autenticado não depende mais de mf_tenant_id.
+    localStorage.removeItem(TENANT_STORAGE_KEY);
+  }
+}
+
+/** @deprecated Use sessão (`/me`). */
 export function getStoredTenantId(): string | null {
   if (!isBrowser()) return null;
   return localStorage.getItem(TENANT_STORAGE_KEY);
 }
 
+/** @deprecated Use sessão (`/me`). */
 export function setStoredTenantId(tenantId: string): void {
   if (!isBrowser()) return;
   localStorage.setItem(TENANT_STORAGE_KEY, tenantId);
@@ -51,48 +72,67 @@ export function setStoredTenantId(tenantId: string): void {
 
 /**
  * Resolve tenant id for API calls.
- * Order: localStorage → POST /api/v1/dev/bootstrap → NEXT_PUBLIC_TENANT_ID → DEV_TENANT_ID seed.
+ * Preferência: sessão autenticada (`setSessionTenantId` / GET `/api/v1/auth/me`).
+ * Fallback Dev (se `/me` falhar): POST `/api/v1/dev/bootstrap` →
+ * `NEXT_PUBLIC_TENANT_ID` → `DEV_TENANT_ID`. Não usar localStorage no fluxo autenticado.
  */
 export async function resolveTenantId(): Promise<string> {
-  const stored = getStoredTenantId();
-  if (stored) return stored;
+  if (sessionTenantId) return sessionTenantId;
+
+  try {
+    const me = await request<AuthUser>("/api/v1/auth/me");
+    if (me?.tenantId) {
+      setSessionTenantId(me.tenantId);
+      return me.tenantId;
+    }
+  } catch {
+    // Preferir auth; em Dev ainda há bootstrap/env abaixo.
+  }
 
   try {
     const res = await fetch(`${API_BASE}/api/v1/dev/bootstrap`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({}),
     });
     if (res.ok) {
       const data = (await res.json()) as BootstrapResponse;
       if (data.tenantId) {
-        setStoredTenantId(data.tenantId);
+        sessionTenantId = data.tenantId;
         return data.tenantId;
       }
     }
   } catch {
-    // API offline or bootstrap unavailable
+    // API offline ou bootstrap indisponível
   }
 
-  const envTenant = process.env.NEXT_PUBLIC_TENANT_ID || DEV_TENANT_ID;
-  setStoredTenantId(envTenant);
-  return envTenant;
+  return process.env.NEXT_PUBLIC_TENANT_ID || DEV_TENANT_ID;
 }
 
-async function request<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
   if (init?.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      credentials: "include",
+      headers,
+    });
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw new ApiError(
+        "Não foi possível conectar à API. Verifique se ela está em http://localhost:5074 e se CORS permite credentials.",
+        0,
+      );
+    }
+    throw err;
+  }
 
   if (res.status === 204) return undefined as T;
 
@@ -115,10 +155,15 @@ async function request<T>(
         ? (body as { error: string }).error
         : typeof body === "object" &&
             body !== null &&
-            "message" in body &&
-            typeof (body as { message: unknown }).message === "string"
-          ? (body as { message: string }).message
-          : `Erro HTTP ${res.status}`;
+            "title" in body &&
+            typeof (body as { title: unknown }).title === "string"
+          ? (body as { title: string }).title
+          : typeof body === "object" &&
+              body !== null &&
+              "message" in body &&
+              typeof (body as { message: unknown }).message === "string"
+            ? (body as { message: string }).message
+            : `Erro HTTP ${res.status}`;
     throw new ApiError(message, res.status, body);
   }
 
@@ -197,6 +242,17 @@ function parametersToGenerateBody(
   };
 }
 
+function mapAuthUser(raw: AuthUser): AuthUser {
+  return {
+    userId: raw.userId,
+    email: raw.email,
+    displayName: raw.displayName ?? null,
+    tenantId: raw.tenantId,
+    organizationName: raw.organizationName,
+    role: raw.role,
+  };
+}
+
 async function loadPatternDetail(
   tid: string,
   patternId: string,
@@ -224,7 +280,11 @@ async function loadPatternDetail(
     qualityIssues = ver.qualityIssues ?? [];
     version = ver.summary.version;
 
-    if (document && (!document.resolvedParametersCm || !Object.keys(document.resolvedParametersCm).length)) {
+    if (
+      document &&
+      (!document.resolvedParametersCm ||
+        !Object.keys(document.resolvedParametersCm).length)
+    ) {
       try {
         const parsed = JSON.parse(ver.parametersJson) as Record<string, number>;
         document = { ...document, resolvedParametersCm: parsed };
@@ -244,6 +304,59 @@ async function loadPatternDetail(
 
 export const api = {
   baseUrl: API_BASE,
+
+  async register(input: RegisterInput): Promise<AuthUser | void> {
+    const body = await request<AuthUser | Record<string, never> | undefined>(
+      "/api/v1/auth/register",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          organizationName: input.organizationName,
+          email: input.email,
+          displayName: input.displayName || undefined,
+          password: input.password,
+        }),
+      },
+    );
+    if (body && typeof body === "object" && "userId" in body && "tenantId" in body) {
+      const user = mapAuthUser(body as AuthUser);
+      setSessionTenantId(user.tenantId);
+      return user;
+    }
+  },
+
+  async login(input: LoginInput): Promise<AuthUser | void> {
+    const body = await request<AuthUser | Record<string, never> | undefined>(
+      "/api/v1/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          email: input.email,
+          password: input.password,
+        }),
+      },
+    );
+    if (body && typeof body === "object" && "userId" in body && "tenantId" in body) {
+      const user = mapAuthUser(body as AuthUser);
+      setSessionTenantId(user.tenantId);
+      return user;
+    }
+  },
+
+  async logout(): Promise<void> {
+    try {
+      await request<void>("/api/v1/auth/logout", { method: "POST" });
+    } finally {
+      setSessionTenantId(null);
+    }
+  },
+
+  async me(): Promise<AuthUser> {
+    const raw = await request<AuthUser>("/api/v1/auth/me");
+    const user = mapAuthUser(raw);
+    setSessionTenantId(user.tenantId);
+    return user;
+  },
 
   async listCustomers(): Promise<Customer[]> {
     return withTenant((tid) =>
@@ -346,15 +459,12 @@ export const api = {
         },
       );
 
-      await request(
-        `/api/v1/tenants/${tid}/patterns/${created.id}/generate`,
-        {
-          method: "POST",
-          body: JSON.stringify(
-            parametersToGenerateBody(input.parameters, input.measurementSetId),
-          ),
-        },
-      );
+      await request(`/api/v1/tenants/${tid}/patterns/${created.id}/generate`, {
+        method: "POST",
+        body: JSON.stringify(
+          parametersToGenerateBody(input.parameters, input.measurementSetId),
+        ),
+      });
 
       return loadPatternDetail(tid, created.id);
     });
@@ -458,7 +568,10 @@ export const api = {
   },
 
   exportDownloadUrl(_patternId: string, jobId: string): string {
-    const tid = getStoredTenantId() ?? process.env.NEXT_PUBLIC_TENANT_ID ?? DEV_TENANT_ID;
+    const tid =
+      sessionTenantId ??
+      process.env.NEXT_PUBLIC_TENANT_ID ??
+      DEV_TENANT_ID;
     return `${API_BASE}/api/v1/tenants/${tid}/exports/${jobId}/download`;
   },
 };
@@ -497,7 +610,16 @@ export function isNotFound(err: unknown): boolean {
 export function formatApiError(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 404) {
-      return "Endpoint ainda não disponível na API (404). A UI permanece utilizável com estados vazios.";
+      return "Endpoint ainda não disponível na API (404). Confirme se AuthN F1.7 está publicado.";
+    }
+    if (err.status === 401) {
+      return "Sessão inválida ou expirada. Faça login novamente.";
+    }
+    if (err.status === 403) {
+      return "Sem permissão para esta operação.";
+    }
+    if (err.status === 409) {
+      return err.message || "Conflito: e-mail ou organização já cadastrados.";
     }
     if (err.status === 0) return err.message;
     if (err.status === 400 && err.body && typeof err.body === "object") {
@@ -505,11 +627,16 @@ export function formatApiError(err: unknown): string {
       if (Array.isArray(details) && details.length) {
         return `${err.message}: ${details.join("; ")}`;
       }
+      const errors = (err.body as { errors?: Record<string, string[]> }).errors;
+      if (errors && typeof errors === "object") {
+        const msgs = Object.values(errors).flat();
+        if (msgs.length) return msgs.join("; ");
+      }
     }
     return err.message;
   }
   if (err instanceof TypeError) {
-    return "Não foi possível conectar à API. Verifique se ela está em http://localhost:5074.";
+    return "Não foi possível conectar à API. Verifique se ela está em http://localhost:5074 e se CORS permite credentials.";
   }
   if (err instanceof Error) return err.message;
   return "Erro inesperado.";

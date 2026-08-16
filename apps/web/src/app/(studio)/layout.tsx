@@ -1,3 +1,4 @@
+import { RequireAuth } from "@/components/auth/AuthGuards";
 import { AppShell } from "@/components/shell/AppShell";
 
 export default function StudioLayout({
@@ -5,5 +6,9 @@ export default function StudioLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <RequireAuth>
+      <AppShell>{children}</AppShell>
+    </RequireAuth>
+  );
 }

@@ -20,4 +20,10 @@ public class User : TenantEntity
     public UserRole Role { get; set; } = UserRole.Member;
     public Guid OrganizationId { get; set; }
     public Organization? Organization { get; set; }
+
+    /// <summary>ASP.NET Identity password hash. Never store plain text.</summary>
+    public string PasswordHash { get; set; } = string.Empty;
+
+    /// <summary>Invalidates outstanding tokens when credentials change.</summary>
+    public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");
 }

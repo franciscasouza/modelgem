@@ -45,7 +45,10 @@ public class ModelaFlowDbContext : DbContext
             e.HasKey(x => x.Id);
             e.Property(x => x.Email).HasMaxLength(320).IsRequired();
             e.Property(x => x.DisplayName).HasMaxLength(200).IsRequired();
+            e.Property(x => x.PasswordHash).HasMaxLength(500).IsRequired();
+            e.Property(x => x.SecurityStamp).HasMaxLength(64).IsRequired();
             e.Property(x => x.Role).HasConversion<string>().HasMaxLength(32);
+            e.HasIndex(x => x.Email).IsUnique();
             e.HasIndex(x => new { x.TenantId, x.Email }).IsUnique();
             e.HasIndex(x => x.TenantId);
         });

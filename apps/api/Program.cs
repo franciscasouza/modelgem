@@ -1,5 +1,9 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ModelaFlow.Api.Auth;
 using ModelaFlow.Api.Data;
+using ModelaFlow.Api.Domain.Identity;
 using ModelaFlow.Api.Endpoints;
 using ModelaFlow.Api.Services;
 
@@ -14,44 +18,89 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
 builder.Services.AddDbContext<ModelaFlowDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
+builder.Services.AddSingleton<JwtTokenService>();
+builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<PlatformService>();
 builder.Services.AddScoped<DesignService>();
+builder.Services.AddScoped<AuthService>();
+
+var authOptions = builder.Configuration.GetSection(AuthOptions.SectionName).Get<AuthOptions>() ?? new AuthOptions();
+var jwtService = new JwtTokenService(Microsoft.Extensions.Options.Options.Create(authOptions));
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = jwtService.CreateValidationParameters();
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (!string.IsNullOrEmpty(context.Token))
+                    return Task.CompletedTask;
+
+                var cookieName = authOptions.CookieName;
+                if (context.Request.Cookies.TryGetValue(cookieName, out var cookieToken)
+                    && !string.IsNullOrWhiteSpace(cookieToken))
+                {
+                    context.Token = cookieToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+var corsOrigins = builder.Configuration["Cors:Origins"]
+        ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? ["http://localhost:3000"];
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("WebDev", policy =>
-        policy.WithOrigins("http://localhost:3000")
+    options.AddPolicy("WebApp", policy =>
+        policy.WithOrigins(corsOrigins)
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .AllowCredentials());
 });
 
 var app = builder.Build();
+
+var applyMigrations = app.Configuration.GetValue("Database:ApplyMigrations", app.Environment.IsDevelopment());
+if (applyMigrations)
+{
+    using var migrateScope = app.Services.CreateScope();
+    var db = migrateScope.ServiceProvider.GetRequiredService<ModelaFlowDbContext>();
+    try
+    {
+        await db.Database.MigrateAsync();
+        app.Logger.LogInformation("Database migrations applied.");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "MigrateAsync failed — continuing without applying migrations.");
+    }
+}
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 
-    // Stable demo tenant for Next.js (tenantId = 11111111-1111-1111-1111-111111111111).
-    // Prefer PostgreSQL; fall back to EnsureCreated when migrations cannot run (local without DB still needs API tests).
     using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<ModelaFlowDbContext>();
-    try
-    {
-        await db.Database.MigrateAsync();
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogWarning(ex, "MigrateAsync failed in Development — continuing without applying migrations.");
-    }
-
     var design = scope.ServiceProvider.GetRequiredService<DesignService>();
+    var auth = scope.ServiceProvider.GetRequiredService<AuthService>();
     try
     {
         await design.EnsureDevTenantSeededAsync();
+        await auth.EnsureDevDemoCredentialsAsync();
         app.Logger.LogInformation(
-            "Dev tenant ready: {TenantId}. Also available via POST /api/v1/dev/bootstrap",
-            DesignService.DevTenantId);
+            "Dev tenant ready: {TenantId}. Login: {Email} (see README). Also POST /api/v1/dev/bootstrap",
+            DesignService.DevTenantId,
+            AuthOptions.DevDemoEmail);
     }
     catch (Exception ex)
     {
@@ -59,8 +108,17 @@ if (app.Environment.IsDevelopment())
     }
 }
 
-app.UseCors("WebDev");
-app.UseHttpsRedirection();
+app.UseCors("WebApp");
+
+var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? string.Empty;
+if (urls.Contains("https://", StringComparison.OrdinalIgnoreCase))
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseAuthentication();
+app.UseMiddleware<TenantAccessMiddleware>();
+app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new
 {
@@ -70,6 +128,7 @@ app.MapGet("/health", () => Results.Ok(new
     pending = new[] { "redis", "s3-storage", "job-queue-provider" }
 }));
 
+app.MapAuthEndpoints();
 app.MapPlatformEndpoints();
 app.MapDesignEndpoints();
 

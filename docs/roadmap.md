@@ -12,9 +12,9 @@
 
 ## Fase 1 — Núcleo sem IA generativa
 
-**Status:** F1.0–F1.6 entregues — API Design/generate/PDF + studio web (contratos alinhados em `apps/web/src/lib/api.ts`). Pendências: AuthN real, Redis/fila, dark mode, edição livre de curvas.
+**Status:** F1.0–F1.7 entregues — API Design/generate/PDF + AuthN mínimo (ADR-0004) + studio web (contratos alinhados em `apps/web/src/lib/api.ts`). Pendências: Redis/fila, dark mode, edição livre de curvas; o web ainda pode precisar consumir cookie/sessão de forma explícita.
 
-**Design / backlog:** Figma em `docs/design.md`; histórias da Fase 1 em `docs/backlog-fase1.md` (ordem F1.0→F1.6).
+**Design / backlog:** Figma em `docs/design.md`; histórias da Fase 1 em `docs/backlog-fase1.md` (ordem F1.0→F1.7).
 
 - organizações, usuários e clientes;
 - medidas versionadas;

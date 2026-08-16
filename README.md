@@ -6,58 +6,53 @@ SaaS brasileiro para desenvolvimento de roupas (modelagem assistida). A IA suger
 
 ```text
 apps/
-  api/           ASP.NET Core Web API (.NET 8) — Identity, Customer, Design, Audit, Export jobs
-  api.tests/     Testes xUnit (tenant, medidas, patterns)
+  api/           ASP.NET Core Web API (.NET 8) — Identity, Customer, Design, Audit, Auth, Export
+  api.tests/     Testes xUnit
   web/           Next.js + TypeScript (App Router)
 packages/
-  pattern-core/  Biblioteca C# — medidas cm + bases saia/vestido
-  pattern-export/ PDF A4 a partir de PatternDocument (QuestPDF)
+  pattern-core/  Geometria paramétrica (cm)
+  pattern-export/ PDF A4 (QuestPDF)
 docs/
-  product-brief.md
-  architecture.md
-  roadmap.md
-  decisions/     ADRs
-  discovery/     Artefatos de descoberta (Fase 0)
+docker-compose.yml
 ```
 
-Solução .NET: `ModelaFlow.sln`
+## Publicar com Docker (recomendado)
 
-## Pré-requisitos
+Pré-requisito: [Docker Desktop](https://www.docker.com/products/docker-desktop/) (ou Engine + Compose v2).
 
-- .NET 8 SDK (ou superior com targeting `net8.0`)
-- Node.js 20+ (para `apps/web`)
-- PostgreSQL (opcional em local; connection string configurável)
+```powershell
+# Na raiz do repositório
+copy .env.example .env   # opcional — ajuste senhas/chaves
+docker compose up --build
+```
 
-## Como rodar
+| Serviço | URL |
+| --- | --- |
+| Web | http://localhost:3000 |
+| API / health | http://localhost:5074/health |
+| Swagger (se `ASPNETCORE_ENVIRONMENT=Development`) | http://localhost:5074/swagger |
+| Postgres | localhost:5432 |
+
+Login demo (Development): `demo@modelaflow.local` / `ChangeMe!`  
+Ou registre em `/register`.
+
+Parar: `docker compose down` · dados: volume `modelaflow_pg`.
+
+Detalhes: `docs/decisions/ADR-0005-docker-compose.md`.
+
+## Desenvolvimento sem Docker
 
 ### API
 
 ```powershell
 cd apps/api
-# Opcional: $env:ConnectionStrings__Default = "Host=localhost;Port=5432;Database=modelaflow;Username=modelaflow;Password=CHANGE_ME"
 dotnet run
 ```
-
-Swagger em Development: `/swagger`  
-Health: `GET /health`  
-CORS: `http://localhost:3000`
-
-Aplicar migrations (com PostgreSQL disponível):
-
-```powershell
-dotnet ef database update --project apps/api/ModelaFlow.Api.csproj --startup-project apps/api/ModelaFlow.Api.csproj
-```
-
-### Tenant de demonstração (Development)
-
-- Seed no startup: tenant estável `11111111-1111-1111-1111-111111111111` (quando o banco está acessível).
-- Ou: `POST http://localhost:5074/api/v1/dev/bootstrap` → `{ "tenantId", "organizationId" }`.
 
 ### Web
 
 ```powershell
 cd apps/web
-# Defina NEXT_PUBLIC_API_URL=http://localhost:5074 (ver .env.example)
 npm install
 npm run dev
 ```
@@ -68,13 +63,11 @@ npm run dev
 dotnet test ModelaFlow.sln
 ```
 
-## Variáveis de ambiente
+## Autenticação
 
-Veja `.env.example`. Não commitar segredos reais.
+- Cookie HttpOnly `mf_auth` (JWT) ou `Authorization: Bearer`
+- ADR: `docs/decisions/ADR-0004-authn-session.md`
 
-- `NEXT_PUBLIC_API_URL` — base URL da API para o Next.js (ex.: `http://localhost:5074`).
+## Variáveis
 
-## Pendências (não neste incremento)
-
-- Redis, storage S3-compatível e provedor de fila (export usa job in-process)
-- AuthN completa (JWT/cookies), OCR, IA, Interpretation, billing
+Veja `.env.example` (Compose e local). Não commitar segredos.

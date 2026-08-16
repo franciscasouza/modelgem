@@ -47,7 +47,9 @@ public sealed class PlatformService
             OrganizationId = tenantId,
             Email = email.Trim().ToLowerInvariant(),
             DisplayName = displayName.Trim(),
-            Role = role
+            Role = role,
+            PasswordHash = string.Empty,
+            SecurityStamp = Guid.NewGuid().ToString("N")
         };
 
         _db.Users.Add(user);

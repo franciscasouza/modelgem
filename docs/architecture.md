@@ -4,6 +4,8 @@
 
 Aplicação web/PWA com API modular, banco relacional, armazenamento de objetos e processamento assíncrono. A arquitetura deve permitir evolução para multi-tenant, sem introduzir microserviços antes da necessidade.
 
+Publicação local: `docker compose up --build` (Postgres + API + web) — ver ADR-0005.
+
 ## Stack de referência
 
 - Frontend: React, Next.js e TypeScript.
@@ -54,11 +56,19 @@ Fluxo HTTP (prefixo `/api/v1/tenants/{tenantId}`):
 4. Ficha técnica: `GET/PUT .../technical-sheet` (materiais / construção).
 5. Overview: `GET .../overview` → contagens reais de clientes e modelos.
 
-CORS em Development/API: origem `http://localhost:3000`. Frontend: `NEXT_PUBLIC_API_URL` (ver `.env.example`).
+CORS em Development/API: origem `http://localhost:3000` com `AllowCredentials` (cookies). Frontend: `NEXT_PUBLIC_API_URL` (ver `.env.example`).
 
-### Bootstrap de tenant (sem AuthN)
+### AuthN (F1.7 / ADR-0004)
 
-Em Development, seed no startup cria o tenant estável `11111111-1111-1111-1111-111111111111` quando o banco está vazio. Alternativa: `POST /api/v1/dev/bootstrap` (somente Development) retorna `{ tenantId, organizationId }`.
+- `POST /api/v1/auth/register` — cria Organization (`TenantId` = Org.Id) + User (Owner) com password hash; seta cookie HttpOnly `mf_auth` (JWT).
+- `POST /api/v1/auth/login` / `logout` / `GET /api/v1/auth/me`.
+- JWT também aceito via `Authorization: Bearer`. Claims: `sub`/`userId`, `tenant_id`.
+- Rotas `/api/v1/tenants/{tenantId}/...` exigem autenticação e match do `tenant_id` (401/403).
+- Audit: `auth.register` / `auth.login` / `auth.logout` (sem senha nos logs).
+
+### Bootstrap de tenant (Development)
+
+Em Development, seed no startup cria o tenant estável `11111111-1111-1111-1111-111111111111` com usuário `demo@modelaflow.local` / `ChangeMe!` quando o banco está acessível. Alternativa: `POST /api/v1/dev/bootstrap` (somente Development; 404 em Production) → `{ tenantId, organizationId }` e garante a senha demo. Em produção use `register`.
 
 ## Exportação PDF
 
@@ -83,12 +93,13 @@ O domínio deve representar pontos, segmentos, curvas, medidas, relações, marg
 
 ## Segurança e privacidade
 
-- isolamento por `tenant_id`;
+- isolamento por `tenant_id` (filtro de domínio + AuthN com match de claim — ADR-0004);
 - autorização em toda operação de arquivo e domínio;
+- senhas com hash (PasswordHasher); sessão via cookie HttpOnly + JWT;
 - criptografia em trânsito e em repouso;
 - consentimento para imagens de clientes;
 - minimização de dados corporais;
-- logs sem expor imagens ou medidas desnecessariamente;
+- logs sem expor imagens, medidas ou senhas;
 - exclusão e exportação de dados;
 - backups e restauração testados.
 

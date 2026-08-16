@@ -58,9 +58,12 @@ public sealed class DesignService
         {
             TenantId = DevTenantId,
             OrganizationId = DevTenantId,
-            Email = "demo@modelaflow.local",
+            Email = Auth.AuthOptions.DevDemoEmail,
             DisplayName = "Demo Owner",
-            Role = Domain.Identity.UserRole.Owner
+            Role = Domain.Identity.UserRole.Owner,
+            // Password set by AuthService.EnsureDevDemoCredentialsAsync (PasswordHasher).
+            PasswordHash = string.Empty,
+            SecurityStamp = Guid.NewGuid().ToString("N")
         };
         _db.Users.Add(user);
 

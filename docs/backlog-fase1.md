@@ -19,6 +19,7 @@ Fonte de design: [`docs/design.md`](design.md) · produto: [`product-brief.md`](
 | F1.4 | **Implementado** | SVG + versão com geometria da API; fixture só se 404 |
 | F1.5 | **Implementado** | Export job + download em `/exports/{jobId}` |
 | F1.6 | **Implementado** | Ficha PUT/GET technical-sheet |
+| F1.7 | **API** | AuthN cookie+JWT multi-tenant (ADR-0004); UI login → `exec-studio` |
 
 **Integração:** client `apps/web/src/lib/api.ts` adaptado aos DTOs da API (não usar `POST /patterns/generate` solto).
 
@@ -35,6 +36,7 @@ Fonte de design: [`docs/design.md`](design.md) · produto: [`product-brief.md`](
 | F1.4 | Editor 2D mínimo | `exec-studio`, `exec-pattern-core` | `1:359` |
 | F1.5 | Exportação PDF A4 | `exec-export`, `exec-studio` | fatia de `1:501` |
 | F1.6 | Ficha técnica básica (leitura) | `exec-atelier` (mínimo) / `exec-studio` | fatia de `1:501` |
+| F1.7 | AuthN mínimo (API) | `exec-platform` | — (sessão antes de Fase 2) |
 | — | Dark mode | `exec-studio` | variantes dark — **depois** do light estável |
 | — | Editor IA completo | `exec-interpretation` | `1:183` — **Fase 2** |
 
@@ -129,6 +131,18 @@ Fonte de design: [`docs/design.md`](design.md) · produto: [`product-brief.md`](
 
 ---
 
+### F1.7 — AuthN mínimo (API)
+
+| ID | História | Critérios de aceite | Fora |
+| --- | --- | --- | --- |
+| F1.7-1 | Register / login / logout / me | Password hash; cookie HttpOnly + JWT; claims `userId` + `tenant_id` | OAuth, convites |
+| F1.7-2 | Gate de tenant nas rotas | `/tenants/{tenantId}/...` → 401 sem auth, 403 cross-tenant | RBAC fino |
+| F1.7-3 | Bootstrap Dev | Seed `demo@modelaflow.local` / `ChangeMe!`; `POST /dev/bootstrap` só Development | Contas de produção |
+
+**ADR:** [`ADR-0004-authn-session.md`](decisions/ADR-0004-authn-session.md). UI de login no web → incremento de `exec-studio`.
+
+---
+
 ## Mapeamento tela → fase
 
 | Tela Figma | Fase 1 | Fase 2+ |
@@ -157,4 +171,4 @@ Fonte de design: [`docs/design.md`](design.md) · produto: [`product-brief.md`](
 
 1. Idioma da UI no MVP: **PT-BR** (recomendado) vs inglês do Figma.
 2. Editor 2D: só parâmetros vs edição de curva no mesmo incremento.
-3. AuthN (JWT/cookie) antes ou depois do shell visual — recomendado **mínimo de sessão** antes de dados reais de cliente em produção.
+3. AuthN (JWT/cookie) — **feito na API (F1.7 / ADR-0004)**; UI de login no web ainda pendente.

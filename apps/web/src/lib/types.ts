@@ -157,6 +157,28 @@ export interface BootstrapResponse {
   userId?: string;
 }
 
+/** Sessão autenticada — GET /api/v1/auth/me */
+export interface AuthUser {
+  userId: string;
+  email: string;
+  displayName: string | null;
+  tenantId: string;
+  organizationName: string;
+  role: string;
+}
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export interface RegisterInput {
+  organizationName: string;
+  email: string;
+  displayName?: string;
+  password: string;
+}
+
 export interface CreateCustomerInput {
   name: string;
   notes?: string;
