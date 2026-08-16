@@ -26,17 +26,17 @@ copy .env.example .env   # opcional — ajuste senhas/chaves
 docker compose up --build
 ```
 
+**Abra no browser:** http://localhost:3080
+
 | Serviço | URL |
 | --- | --- |
-| Web | http://localhost:3080 |
-| API / health | http://localhost:5074/health |
-| Swagger (se `ASPNETCORE_ENVIRONMENT=Development`) | http://localhost:5074/swagger |
-| Postgres | localhost:5432 |
+| Studio | http://localhost:3080 |
+| Login | http://localhost:3080/login |
+| Health | http://localhost:3080/health |
 
-> No Windows, a porta **3080** é o default do Compose — a 3000 costuma falhar no relay Docker/WSL (`connection reset`).
+Login demo: `demo@modelaflow.local` / `ChangeMe!`
 
-Login demo (Development): `demo@modelaflow.local` / `ChangeMe!`  
-Ou registre em `/register`.
+Gateway nginx na porta **3080** (web + `/api` na mesma origem). No Windows, 3000/8080 costumam falhar no relay Docker.
 
 Parar: `docker compose down` · dados: volume `modelaflow_pg`.
 

@@ -1,5 +1,5 @@
-# ModelaFlow — stack local / publicação via Docker
-# Browser: web http://localhost:3000 → API http://localhost:5074 (NEXT_PUBLIC_* é URL do host)
+# ModelaFlow — Docker Compose
+# Browser (Windows): http://localhost:3080
 
 name: modelaflow
 
@@ -30,29 +30,45 @@ services:
       ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB:-modelaflow};Username=${POSTGRES_USER:-modelaflow};Password=${POSTGRES_PASSWORD:-CHANGE_ME}
       Auth__JwtSigningKey: ${AUTH_JWT_SIGNING_KEY:-DEV_ONLY_CHANGE_ME_ModelaFlow_Auth_Signing_Key_32+}
       Auth__CookieName: mf_auth
-      Cors__Origins: ${CORS_ORIGINS:-http://localhost:3080,http://localhost:3000}
+      Cors__Origins: ${CORS_ORIGINS:-http://localhost:3080}
       Database__ApplyMigrations: "true"
     ports:
       - "${API_PORT:-5074}:8080"
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
 
   web:
     build:
       context: apps/web
       dockerfile: Dockerfile
       args:
-        # URL que o *browser* usa para chamar a API (porta publicada no host)
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5074}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3080}
     environment:
       NODE_ENV: production
-    ports:
-      # 3080 evita conflito comum do relay WSL/Docker na porta 3000 no Windows
-      - "${WEB_PORT:-3080}:3000"
+    # Sem publish direto — o browser entra pelo gateway :3080
+    expose:
+      - "3000"
     depends_on:
       api:
         condition: service_healthy
+
+  gateway:
+    image: nginx:1.27-alpine
+    ports:
+      # 3080 funciona no Docker Desktop Windows; 3000/8080 costumam resetar
+      - "${GATEWAY_PORT:-3080}:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - web
+      - api
 
 volumes:
   modelaflow_pg:
