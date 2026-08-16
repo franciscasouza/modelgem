@@ -1,0 +1,16 @@
+---
+description: Regras gerais do ModelaFlow
+alwaysApply: true
+---
+
+# Regras do projeto
+
+- Leia `AGENTS.md` antes de modificar o projeto.
+- Consulte `docs/product-brief.md` e `docs/architecture.md` antes de criar módulos.
+- Para execução multi-etapa, use os subagentes em `.cursor/agents/` (ver `docs/agents.md`); comece por `exec-orchestrator`.
+- Não trate uma saída de IA como molde definitivo sem confirmação do usuário.
+- Preserve origem, versão, autoria e permissões de todos os arquivos.
+- Use centímetros como unidade de negócio; converta somente nas bordas de impressão/exportação.
+- Separe domínio geométrico, infraestrutura, IA e interface.
+- Toda operação com impacto em medidas, escala ou arquivos deve ser coberta por teste.
+- Se uma decisão mudar escopo, segurança, custo ou arquitetura, registre um ADR.

@@ -1,0 +1,47 @@
+###
+# ModelaFlow API — exemplos locais (sem credenciais reais)
+
+@base = http://localhost:5074
+@tenantId = 00000000-0000-0000-0000-000000000000
+
+### Health
+GET {{base}}/health
+
+### Criar organização
+POST {{base}}/api/v1/organizations
+Content-Type: application/json
+
+{
+  "name": "Atelier Exemplo"
+}
+
+### Criar usuária (substitua tenantId)
+POST {{base}}/api/v1/tenants/{{tenantId}}/users
+Content-Type: application/json
+
+{
+  "email": "modelista@exemplo.local",
+  "displayName": "Modelista",
+  "role": "Owner"
+}
+
+### Criar cliente
+POST {{base}}/api/v1/tenants/{{tenantId}}/customers
+Content-Type: application/json
+
+{
+  "name": "Cliente Demo"
+}
+
+### Criar MeasurementSet (versão nova)
+POST {{base}}/api/v1/tenants/{{tenantId}}/customers/{{customerId}}/measurement-sets
+Content-Type: application/json
+
+{
+  "waistCm": 70,
+  "hipCm": 95,
+  "lengthCm": 60
+}
+
+### Listar versões de medidas
+GET {{base}}/api/v1/tenants/{{tenantId}}/customers/{{customerId}}/measurement-sets
