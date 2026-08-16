@@ -28,10 +28,12 @@ docker compose up --build
 
 | Serviço | URL |
 | --- | --- |
-| Web | http://localhost:3000 |
+| Web | http://localhost:3080 |
 | API / health | http://localhost:5074/health |
 | Swagger (se `ASPNETCORE_ENVIRONMENT=Development`) | http://localhost:5074/swagger |
 | Postgres | localhost:5432 |
+
+> No Windows, a porta **3080** é o default do Compose — a 3000 costuma falhar no relay Docker/WSL (`connection reset`).
 
 Login demo (Development): `demo@modelaflow.local` / `ChangeMe!`  
 Ou registre em `/register`.

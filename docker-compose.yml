@@ -30,7 +30,7 @@ services:
       ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB:-modelaflow};Username=${POSTGRES_USER:-modelaflow};Password=${POSTGRES_PASSWORD:-CHANGE_ME}
       Auth__JwtSigningKey: ${AUTH_JWT_SIGNING_KEY:-DEV_ONLY_CHANGE_ME_ModelaFlow_Auth_Signing_Key_32+}
       Auth__CookieName: mf_auth
-      Cors__Origins: ${CORS_ORIGINS:-http://localhost:3000}
+      Cors__Origins: ${CORS_ORIGINS:-http://localhost:3080,http://localhost:3000}
       Database__ApplyMigrations: "true"
     ports:
       - "${API_PORT:-5074}:8080"
@@ -48,7 +48,8 @@ services:
     environment:
       NODE_ENV: production
     ports:
-      - "${WEB_PORT:-3000}:3000"
+      # 3080 evita conflito comum do relay WSL/Docker na porta 3000 no Windows
+      - "${WEB_PORT:-3080}:3000"
     depends_on:
       api:
         condition: service_healthy
