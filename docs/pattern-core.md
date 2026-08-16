@@ -59,10 +59,11 @@ Valores fora de min–max ou inconsistentes → `PatternValidationException` (`v
 
 ## Limitações conhecidas
 
-- Sem dardos, godês, gradação, DXF, editor ou PDF neste pacote.
+- Sem dardos, godês, gradação, DXF ou editor neste pacote.
+- PDF A4 fica em `packages/pattern-export` (não recalcula geometria).
 - Laterais: Bézier cúbica suave entre estações (controles no cordão) — suficiente para teste, não substitui modelagem industrial.
 - Vestido sem cava/manga/decote modelado.
-- Critérios de qualidade de impressão A4 ficam para exportação (`exec-export`).
+- Critérios de qualidade de impressão A4: `docs/discovery/quality-criteria.md` + ADR-0003.
 
 ## API pública (C#)
 

@@ -4,7 +4,7 @@ Subagentes do projeto em `.cursor/agents/`. Acione pelo nome ou peça ao agente 
 
 ## Ordem recomendada
 
-1. `exec-orchestrator` — define fase e próximo incremento.
+1. `exec-orchestrator` — define fase e próximo incremento (consultar `docs/backlog-fase1.md` na Fase 1).
 2. Agente da fase/módulo.
 3. `exec-docs` — se houve decisão de escopo, arquitetura ou contrato.
 

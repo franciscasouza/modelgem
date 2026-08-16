@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ModelaFlow.Api.Domain.Audit;
 using ModelaFlow.Api.Domain.Customer;
+using ModelaFlow.Api.Domain.Design;
 using ModelaFlow.Api.Domain.Identity;
 
 namespace ModelaFlow.Api.Data;
@@ -20,6 +21,10 @@ public class ModelaFlowDbContext : DbContext
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<MeasurementSet> MeasurementSets => Set<MeasurementSet>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+    public DbSet<PatternModel> PatternModels => Set<PatternModel>();
+    public DbSet<PatternVersion> PatternVersions => Set<PatternVersion>();
+    public DbSet<TechnicalSheet> TechnicalSheets => Set<TechnicalSheet>();
+    public DbSet<ExportJob> ExportJobs => Set<ExportJob>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -87,6 +92,54 @@ public class ModelaFlowDbContext : DbContext
             e.Property(x => x.MetadataJson).HasMaxLength(4000);
             e.HasIndex(x => x.TenantId);
             e.HasIndex(x => x.OccurredAt);
+        });
+
+        modelBuilder.Entity<PatternModel>(e =>
+        {
+            e.ToTable("pattern_models");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            e.Property(x => x.ReferenceCode).HasMaxLength(64).IsRequired();
+            e.Property(x => x.BaseKind).HasConversion<string>().HasMaxLength(32);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+            e.HasIndex(x => x.TenantId);
+            e.HasIndex(x => new { x.TenantId, x.UpdatedAt });
+            e.HasMany(x => x.Versions).WithOne(x => x.PatternModel).HasForeignKey(x => x.PatternModelId);
+            e.HasOne(x => x.TechnicalSheet).WithOne(x => x.PatternModel)
+                .HasForeignKey<TechnicalSheet>(x => x.PatternModelId);
+        });
+
+        modelBuilder.Entity<PatternVersion>(e =>
+        {
+            e.ToTable("pattern_versions");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.ParametersJson).IsRequired();
+            e.Property(x => x.GeometryJson);
+            e.Property(x => x.QualityIssuesJson);
+            e.HasIndex(x => new { x.TenantId, x.PatternModelId, x.Version }).IsUnique();
+            e.HasIndex(x => x.TenantId);
+        });
+
+        modelBuilder.Entity<TechnicalSheet>(e =>
+        {
+            e.ToTable("technical_sheets");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.MaterialsNotes).HasMaxLength(4000);
+            e.Property(x => x.ConstructionNotes).HasMaxLength(4000);
+            e.HasIndex(x => x.TenantId);
+            e.HasIndex(x => new { x.TenantId, x.PatternModelId }).IsUnique();
+        });
+
+        modelBuilder.Entity<ExportJob>(e =>
+        {
+            e.ToTable("export_jobs");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+            e.Property(x => x.Format).HasMaxLength(32).IsRequired();
+            e.Property(x => x.ErrorMessage).HasMaxLength(500);
+            e.Property(x => x.ResultBytes);
+            e.HasIndex(x => x.TenantId);
+            e.HasIndex(x => new { x.TenantId, x.PatternModelId });
         });
     }
 }

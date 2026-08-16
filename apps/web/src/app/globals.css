@@ -1,33 +1,83 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand — deep blue (Figma ModelaFlow light) */
+  --mf-primary: #0b3d91;
+  --mf-primary-hover: #0a357e;
+  --mf-primary-muted: #e8eef8;
+  --mf-sidebar: #0a2f6e;
+  --mf-sidebar-hover: #0c3a85;
+  --mf-sidebar-text: #ffffff;
+  --mf-sidebar-muted: rgba(255, 255, 255, 0.65);
+  --mf-sidebar-active: rgba(255, 255, 255, 0.12);
+
+  /* Surfaces */
+  --mf-bg: #eef1f5;
+  --mf-surface: #ffffff;
+  --mf-surface-muted: #f7f8fa;
+  --mf-border: #dce1e8;
+  --mf-border-strong: #c5ccd6;
+
+  /* Text */
+  --mf-text: #1a2332;
+  --mf-text-secondary: #5a6577;
+  --mf-text-muted: #8a94a6;
+
+  /* Status */
+  --mf-success: #1f7a4c;
+  --mf-success-bg: #e8f5ee;
+  --mf-warning: #9a6b00;
+  --mf-warning-bg: #fff6e0;
+  --mf-danger: #b42318;
+  --mf-danger-bg: #fdecea;
+  --mf-info: #0b3d91;
+  --mf-info-bg: #e8eef8;
+
+  /* Accent (Figma teal chips) */
+  --mf-accent: #0d8a7c;
+  --mf-accent-bg: #e6f7f4;
+
+  /* Typography */
+  --mf-font-sans: var(--font-source-sans), "Segoe UI", sans-serif;
+  --mf-font-display: var(--font-source-sans), "Segoe UI", sans-serif;
+  --mf-text-xs: 0.75rem;
+  --mf-text-sm: 0.875rem;
+  --mf-text-md: 1rem;
+  --mf-text-lg: 1.125rem;
+  --mf-text-xl: 1.375rem;
+  --mf-text-2xl: 1.75rem;
+
+  /* Layout */
+  --mf-sidebar-width: 240px;
+  --mf-radius: 10px;
+  --mf-radius-sm: 6px;
+  --mf-shadow: 0 1px 2px rgba(26, 35, 50, 0.06), 0 1px 3px rgba(26, 35, 50, 0.04);
+  --mf-shadow-md: 0 4px 12px rgba(26, 35, 50, 0.08);
+
+  --background: var(--mf-bg);
+  --foreground: var(--mf-text);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html,
 body {
   max-width: 100vw;
-  overflow-x: hidden;
+  min-height: 100%;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--mf-text);
+  background: var(--mf-bg);
+  font-family: var(--mf-font-sans);
+  font-size: var(--mf-text-md);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 a {
@@ -35,8 +85,58 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--mf-text);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--mf-primary);
+  outline-offset: 2px;
+}
+
+.mf-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

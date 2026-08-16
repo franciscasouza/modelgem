@@ -6,11 +6,12 @@ SaaS brasileiro para desenvolvimento de roupas (modelagem assistida). A IA suger
 
 ```text
 apps/
-  api/           ASP.NET Core Web API (.NET 8) — Identity, Customer, Audit, EF Core
-  api.tests/     Testes xUnit (isolamento por tenant + versionamento de medidas)
-  web/           Next.js + TypeScript (App Router) — UI placeholder
+  api/           ASP.NET Core Web API (.NET 8) — Identity, Customer, Design, Audit, Export jobs
+  api.tests/     Testes xUnit (tenant, medidas, patterns)
+  web/           Next.js + TypeScript (App Router)
 packages/
-  pattern-core/  Biblioteca C# — DTOs/tipos de medidas em cm (sem regras geométricas completas neste incremento)
+  pattern-core/  Biblioteca C# — medidas cm + bases saia/vestido
+  pattern-export/ PDF A4 a partir de PatternDocument (QuestPDF)
 docs/
   product-brief.md
   architecture.md
@@ -38,7 +39,8 @@ dotnet run
 ```
 
 Swagger em Development: `/swagger`  
-Health: `GET /health`
+Health: `GET /health`  
+CORS: `http://localhost:3000`
 
 Aplicar migrations (com PostgreSQL disponível):
 
@@ -46,10 +48,16 @@ Aplicar migrations (com PostgreSQL disponível):
 dotnet ef database update --project apps/api/ModelaFlow.Api.csproj --startup-project apps/api/ModelaFlow.Api.csproj
 ```
 
+### Tenant de demonstração (Development)
+
+- Seed no startup: tenant estável `11111111-1111-1111-1111-111111111111` (quando o banco está acessível).
+- Ou: `POST http://localhost:5074/api/v1/dev/bootstrap` → `{ "tenantId", "organizationId" }`.
+
 ### Web
 
 ```powershell
 cd apps/web
+# Defina NEXT_PUBLIC_API_URL=http://localhost:5074 (ver .env.example)
 npm install
 npm run dev
 ```
@@ -64,7 +72,9 @@ dotnet test ModelaFlow.sln
 
 Veja `.env.example`. Não commitar segredos reais.
 
+- `NEXT_PUBLIC_API_URL` — base URL da API para o Next.js (ex.: `http://localhost:5074`).
+
 ## Pendências (não neste incremento)
 
-- Redis, storage S3-compatível e fila de jobs (documentados como TODO)
-- AuthN completa (JWT/cookies), OCR, IA, Interpretation, editor 2D, PDF, billing
+- Redis, storage S3-compatível e provedor de fila (export usa job in-process)
+- AuthN completa (JWT/cookies), OCR, IA, Interpretation, billing

@@ -1,0 +1,137 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 1100px;
+}
+
+.header h1 {
+  font-size: var(--mf-text-2xl);
+  margin-top: 0.15rem;
+}
+
+.eyebrow {
+  font-size: var(--mf-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mf-primary);
+}
+
+.lead {
+  color: var(--mf-text-secondary);
+  margin-top: 0.35rem;
+}
+
+.back {
+  display: inline-block;
+  font-size: var(--mf-text-sm);
+  color: var(--mf-primary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.panel {
+  background: var(--mf-surface);
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  padding: 1rem 1.1rem;
+  box-shadow: var(--mf-shadow);
+}
+
+.panel h2 {
+  font-size: var(--mf-text-lg);
+  margin-bottom: 0.85rem;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 0.75rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--mf-border);
+}
+
+.list li:first-child .row {
+  border-top: none;
+}
+
+.meta {
+  display: block;
+  font-size: var(--mf-text-sm);
+  color: var(--mf-text-secondary);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.versions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.versionCard {
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius-sm);
+  padding: 0.75rem;
+  background: var(--mf-surface-muted);
+}
+
+.versionHead {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: var(--mf-text-sm);
+}
+
+.measureGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 0.75rem;
+  font-size: var(--mf-text-sm);
+}
+
+.measureGrid dt {
+  color: var(--mf-text-secondary);
+}
+
+.measureGrid dd {
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .layout,
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}

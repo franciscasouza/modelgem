@@ -12,15 +12,18 @@
 
 ## Fase 1 — Núcleo sem IA generativa
 
-**Status:** fundação da plataforma entregue (Identity/Customer/Audit, medidas versionadas, EF/PostgreSQL, placeholder web). **Núcleo geométrico determinístico (saia reta + vestido simples) entregue neste incremento** em `packages/pattern-core` — ver `docs/pattern-core.md`. Editor 2D e PDF A4 ainda pendentes.
+**Status:** F1.0–F1.6 entregues — API Design/generate/PDF + studio web (contratos alinhados em `apps/web/src/lib/api.ts`). Pendências: AuthN real, Redis/fila, dark mode, edição livre de curvas.
+
+**Design / backlog:** Figma em `docs/design.md`; histórias da Fase 1 em `docs/backlog-fase1.md` (ordem F1.0→F1.6).
 
 - organizações, usuários e clientes;
 - medidas versionadas;
 - bases de saia e vestido (paramétricas + testes de regressão);
 - regras paramétricas;
-- editor 2D mínimo;
-- PDF A4 com escala;
-- testes geométricos.
+- Design API: patterns, generate, technical-sheet, overview;
+- PDF A4 com escala (job in-process);
+- testes geométricos + isolamento tenant de patterns;
+- editor 2D mínimo (UI).
 
 ## Fase 2 — Assistente de interpretação
 

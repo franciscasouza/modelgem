@@ -135,6 +135,185 @@ namespace ModelaFlow.Api.Data.Migrations
                     b.ToTable("measurement_sets", (string)null);
                 });
 
+            modelBuilder.Entity("ModelaFlow.Api.Domain.Design.ExportJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("PatternModelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PatternVersionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("ResultBytes")
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "PatternModelId");
+
+                    b.ToTable("export_jobs", (string)null);
+                });
+
+            modelBuilder.Entity("ModelaFlow.Api.Domain.Design.PatternModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BaseKind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ReferenceCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "UpdatedAt");
+
+                    b.ToTable("pattern_models", (string)null);
+                });
+
+            modelBuilder.Entity("ModelaFlow.Api.Domain.Design.PatternVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("GeometryJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ParametersJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PatternModelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("QualityIssuesJson")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatternModelId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "PatternModelId", "Version")
+                        .IsUnique();
+
+                    b.ToTable("pattern_versions", (string)null);
+                });
+
+            modelBuilder.Entity("ModelaFlow.Api.Domain.Design.TechnicalSheet", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConstructionNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("MaterialsNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<Guid>("PatternModelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatternModelId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "PatternModelId")
+                        .IsUnique();
+
+                    b.ToTable("technical_sheets", (string)null);
+                });
+
             modelBuilder.Entity("ModelaFlow.Api.Domain.Identity.Organization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -213,6 +392,28 @@ namespace ModelaFlow.Api.Data.Migrations
                     b.Navigation("Customer");
                 });
 
+            modelBuilder.Entity("ModelaFlow.Api.Domain.Design.PatternVersion", b =>
+                {
+                    b.HasOne("ModelaFlow.Api.Domain.Design.PatternModel", "PatternModel")
+                        .WithMany("Versions")
+                        .HasForeignKey("PatternModelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PatternModel");
+                });
+
+            modelBuilder.Entity("ModelaFlow.Api.Domain.Design.TechnicalSheet", b =>
+                {
+                    b.HasOne("ModelaFlow.Api.Domain.Design.PatternModel", "PatternModel")
+                        .WithOne("TechnicalSheet")
+                        .HasForeignKey("ModelaFlow.Api.Domain.Design.TechnicalSheet", "PatternModelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PatternModel");
+                });
+
             modelBuilder.Entity("ModelaFlow.Api.Domain.Identity.User", b =>
                 {
                     b.HasOne("ModelaFlow.Api.Domain.Identity.Organization", "Organization")
@@ -227,6 +428,13 @@ namespace ModelaFlow.Api.Data.Migrations
             modelBuilder.Entity("ModelaFlow.Api.Domain.Customer.Customer", b =>
                 {
                     b.Navigation("MeasurementSets");
+                });
+
+            modelBuilder.Entity("ModelaFlow.Api.Domain.Design.PatternModel", b =>
+                {
+                    b.Navigation("TechnicalSheet");
+
+                    b.Navigation("Versions");
                 });
 
             modelBuilder.Entity("ModelaFlow.Api.Domain.Identity.Organization", b =>

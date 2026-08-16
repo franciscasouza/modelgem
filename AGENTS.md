@@ -22,6 +22,7 @@ Construir um SaaS brasileiro para desenvolvimento de roupas. A plataforma deve a
 4. `docs/roadmap.md`.
 5. ADRs relevantes em `docs/decisions/`.
 6. `docs/agents.md` — mapa dos agentes de execução em `.cursor/agents/`.
+7. `docs/design.md` e `docs/backlog-fase1.md` — Figma e backlog da Fase 1.
 
 ## Agentes de execução
 

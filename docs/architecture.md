@@ -20,27 +20,51 @@ Aplicação web/PWA com API modular, banco relacional, armazenamento de objetos 
 
 ```text
 apps/api                    API ASP.NET Core (.NET 8) + EF Core
-apps/api.tests              Testes de tenant e versionamento
-apps/web                    Next.js (App Router) — UI placeholder
+apps/api.tests              Testes de tenant, versionamento e Design
+apps/web                    Next.js (App Router)
 packages/pattern-core       Medidas + modelo geométrico + bases saia/vestido
 packages/pattern-core.tests Testes de regressão / determinismo / validação
+packages/pattern-export     PDF A4 a partir de PatternDocument (QuestPDF)
+packages/pattern-export.tests
 docs/                       Brief, arquitetura, roadmap, ADRs, discovery
 ```
 
-Solução: `ModelaFlow.sln`. Multi-tenant por `tenant_id` em toda entidade de domínio (ver ADR-0002). Redis, S3 e filas permanecem previstos, ainda sem implementação neste incremento.
+Solução: `ModelaFlow.sln`. Multi-tenant por `tenant_id` em toda entidade de domínio (ver ADR-0002). Redis e S3 permanecem previstos; jobs de export PDF rodam in-process no MVP (ADR-0003).
 
 ## Módulos de domínio
 
 - Identity: usuários, organizações, papéis e permissões.
 - Customer: clientes e medidas versionadas.
-- Design: modelos, referências, componentes e versões.
-- Pattern: pontos, linhas, curvas, partes, regras paramétricas e validações.
-- Interpretation: resultados de IA, confiança, confirmações e avisos.
-- TechnicalSheet: materiais, aviamentos, montagem e observações.
+- Design: `PatternModel`, `PatternVersion` (append-only), `TechnicalSheet` mínima, `ExportJob`.
+- Pattern: pontos, linhas, curvas, partes, regras paramétricas e validações (`packages/pattern-core`).
+- Interpretation: resultados de IA, confiança, confirmações e avisos (Fase 2).
+- TechnicalSheet: materiais, aviamentos, montagem e observações (mínimo na Fase 1).
 - Costing: consumo, mão de obra, despesas, preço e margem.
 - Files: origem, armazenamento, hash, permissões e ciclo de vida.
 - Billing: planos, créditos, consumo e pagamentos.
 - Audit: eventos relevantes e trilha de alterações.
+
+## Design + geração (Fase 1)
+
+Fluxo HTTP (prefixo `/api/v1/tenants/{tenantId}`):
+
+1. Criar `PatternModel` (`straight_skirt` | `simple_dress` | `blank`).
+2. `POST .../patterns/{id}/generate` chama `StraightSkirtPattern` / `SimpleDressPattern`, grava `PatternVersion` com `ParametersJson` + `GeometryJson` (`pattern.v1`) e `QualityIssuesJson`.
+3. Validação (`PatternValidationException`) → HTTP 400 com `details` — sem cálculo silencioso.
+4. Ficha técnica: `GET/PUT .../technical-sheet` (materiais / construção).
+5. Overview: `GET .../overview` → contagens reais de clientes e modelos.
+
+CORS em Development/API: origem `http://localhost:3000`. Frontend: `NEXT_PUBLIC_API_URL` (ver `.env.example`).
+
+### Bootstrap de tenant (sem AuthN)
+
+Em Development, seed no startup cria o tenant estável `11111111-1111-1111-1111-111111111111` quando o banco está vazio. Alternativa: `POST /api/v1/dev/bootstrap` (somente Development) retorna `{ tenantId, organizationId }`.
+
+## Exportação PDF
+
+- Pacote `pattern-export`: entrada `PatternDocument` desserializado; saída bytes PDF A4.
+- Não recalcula molde; desenha contornos stitch/cut, labels, fio, piques, margens, régua 10 cm e texto `escala 100% / 1:1`.
+- Job: `POST .../patterns/{id}/exports` → `ExportJob`; `GET .../exports/{jobId}` (status + download URL); `GET .../exports/{jobId}/download` (bytes).
 
 ## Fluxo de referência
 
